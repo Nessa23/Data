@@ -1,0 +1,59 @@
+#! /usr/bin/env python
+# -*- coding: utf-8 -*-
+import os
+import numpy as np
+from matplotlib import pyplot as plt
+
+from astropy.coordinates import SkyCoord
+from astropy import units as u
+from astropy.coordinates import match_coordinates_sky
+from astropy.io import ascii
+from matplotlib import pyplot as plt
+from scipy.optimize import curve_fit
+
+def func1(x, a, b):
+    return a*x + b
+
+def func2(x, a, b, c):
+    return a*x*x + b*x +c
+
+    
+def trender(X, Y, order, view):
+    if order==1:
+        popt, pcov = curve_fit(func1, X, Y)
+        if view == 'yes':
+            plt.plot(X, Y, 'go')
+            plt.plot(X, func1(X, *popt), 'ro')
+            plt.ylabel('APASS', fontsize=15)
+            plt.xlabel('Inst', fontsize=15)
+            plt.title(popt)
+            plt.grid()
+            plt.show()
+            print popt
+        return func1(X, *popt)
+
+    if order==2:
+        popt, pcov = curve_fit(func2, X, Y)
+        if view == 'yes':
+            plt.plot(X, Y, 'go')
+            plt.plot(X, func2(X, *popt), 'r.')
+            plt.ylabel('APASS', fontsize=15)
+            plt.xlabel('Inst', fontsize=15)
+	    plt.title(popt)
+            plt.grid()
+            plt.show()
+        return func2(X, *popt), func2(Obj_X, *popt)  
+
+path='/home/anastasia/Desktop/4_NGC188/table_apass.txt'
+data=np.genfromtxt(path,delimiter='\t',missing_values='')
+Y=data[:,2]
+X=data[:,16]
+Index=np.where(np.isnan(Y)==False)
+
+Y=Y[Index]
+X=X[Index]
+
+
+trender(X,Y,1,'yes')
+plt.plot(X, Y, 'go')
+plt.show()
