@@ -1,0 +1,206 @@
+#! /usr/bin/env python
+# -*- coding: utf-8 -*-
+import os
+import numpy as np
+from matplotlib import pyplot as plt
+
+from astropy.coordinates import SkyCoord
+from astropy import units as u
+from astropy.coordinates import match_coordinates_sky
+from astropy.io import ascii
+from  astropy.io.ascii import SExtractor as SE
+from astropy.table import unique
+from astropy.table import Table
+
+##main parameters 
+dir_name = '/home/anastasia/Desktop/4_NGC188/all/'
+
+print('ok')
+##create list of image files 
+file_list = []
+##dir_content = os.listdir(Path2Data)
+for file in os.listdir(dir_name):   ##read directory with images
+    if file.count('.cat')==1:
+        file_list.append(dir_name + file) #
+        
+N_Frame = len(file_list)
+print('Files: ' + str(N_Frame))
+
+
+#сколько звезд
+##set first table as catalog #xmatch 
+path_to_xmatch='/home/anastasia/Desktop/4_NGC188/XMatchRe.txt'
+Base_Tbl = ascii.read(path_to_xmatch)
+# print(Tbl.info)
+Catalog = SkyCoord(ra=Base_Tbl['ALPHA_J2000_tab2'], dec=Base_Tbl['DELTA_J2000_tab2'], unit='deg')
+#Catalog = SkyCoord(ra=Base_Tbl['ra_tab1'], dec=Base_Tbl['dec_tab1'], unit='deg')
+print ('yes')
+N_Star = len(Base_Tbl['ALPHA_J2000_tab2'])
+print('Stars: ' + str(N_Star))
+#plt.plot(Base_Tbl['phot_g_mean_mag_tab1']-Base_Tbl['phot_rp_mean_mag_tab1'],  #Base_Tbl['phot_g_mean_mag_tab1'], 'b.')  #,Base_Tbl['MAG_APER_tab2'])
+#plt.show()
+##create empty table and add some data from GAIA
+Out_Tbl=Base_Tbl['NUMBER_tab2','dist','ra_tab1','ra_error_tab1','ALPHA_J2000_tab2','DELTA_J2000_tab2','dec_tab1','dec_error_tab1','parallax_tab1','parallax_error_tab1','phot_g_mean_mag_tab1','phot_bp_mean_mag_tab1','phot_rp_mean_mag_tab1','MAG_APER_tab2','radial_velocity_tab1']
+#print Out_Tbl
+
+#-----------------------------------------------------------------------------------------------
+
+for ii in range  (0,1):#N_Frame):
+    Tbl = ascii.read('/home/anastasia/Desktop/4_NGC188/all/2016-12-22T17-32-05.117.cat')#first file cat
+    print file_list[ii]
+    Sources = SkyCoord(ra=Tbl['ALPHA_J2000'], dec=Tbl['DELTA_J2000'], unit='deg')
+    #Sources = SkyCoord(ra=Tbl['ra_tab1'], dec=Tbl['dec_tab1'], unit='deg')
+    idx, d2d, d3d =match_coordinates_sky(Catalog,Sources)
+    Local_Sources =Tbl[idx]#filtered cat
+    Local_Sources['d2d']=d2d 
+    #plt.plot(Base_Tbl['NUMBER_tab2'],Local_Sources['NUMBER'])
+    #plt.show()
+    print (len(Local_Sources))
+    print (len(Catalog))
+##add new columns(Aper_1, d2d) to Out_Table
+    #Out_Tbl['NUMBER_tab2']=Local_Sources['NUMBER']
+    Out_Tbl['NUMBER']=Local_Sources['NUMBER']
+    Out_Tbl['MAG_APER1']=Local_Sources['MAG_APER']
+    Out_Tbl['mag_aper1_err']=Local_Sources['MAGERR_APER']
+    Out_Tbl['MAG_APER2']=Local_Sources['MAG_APER_1']
+    Out_Tbl['mag_aper2_err']=Local_Sources['MAGERR_APER_1']
+    Out_Tbl['MAG_APER3']=Local_Sources['MAG_APER_2']
+    Out_Tbl['mag_aper3_err']=Local_Sources['MAGERR_APER_2']
+    Out_Tbl['d2d']=Local_Sources['d2d']  
+    plt.plot(Out_Tbl['NUMBER'],Out_Tbl['NUMBER_tab2'])
+    plt.show()
+    print Out_Tbl
+                    
+    '''Index = np.where(d2d.arcsec>2.0)[0]
+    Out_Tbl['MAG_APER1'][Index]=np.nan
+    Out_Tbl['NUMBER'][Index]=0
+    plt.plot(Out_Tbl['phot_g_mean_mag_tab1'],Out_Tbl['MAG_APER1'],'r.')
+    plt.show()
+    Catalog = Catalog[Index]
+    Local_Sources = Local_Sources[Index]
+    print (len(Local_Sources))
+    print (len(Catalog))
+
+    #print Local_Sources
+    print ('ok')
+    #New_Tab=np.array(Out_Tbl)'''
+np.savetxt('/home/anastasia/Desktop/4_NGC188/Out_Table.txt',Out_Tbl,delimiter='	',header='NUMBER	dist	RA	RA_ERR	ALPHA	DELTA	DEC	DEC_ERR	PARALLAX	PAR_ERR	G_MEAN_MAG	BP_MAG	RP_MAG	mag_aper		radial_velocity	MAG_APER1	1ERR	MAG_APER2	2ERR	MAG_APER2	3ERR	D2D',fmt='%s')
+
+
+
+
+'''
+print ('ok')
+print (len(Out_Tbl))
+plt.plot(Base_Tbl['NUMBER_tab2'],Local_Sources['NUMBER'])
+#plt.plot(3600*(Catalog.dec - Local_Sources['DELTA_J2000']), 'b.')
+plt.show() 
+plt.plot(3600*(Catalog.ra - Local_Sources['ALPHA_J2000'])*np.cos(np.radians(Catalog.dec)), 'r.')
+plt.plot(3600*(Catalog.dec - Local_Sources['DELTA_J2000']), 'b.')
+plt.show()
+
+
+
+
+
+
+Cat=unique(Cat,keys=None,silent=False,keep='first')
+N_F = len(Cat)
+print(N_F)'''
+##plt.plot(Cat['NUMBER'])
+#plt.show()
+
+
+
+
+
+
+
+'''
+#add alpha delta and mag
+    Data[ii,idxCatalog] = Tbl['MAG_APER'][idxFrame]
+    Data1[ii,idxCatalog] = Tbl['MAG_APER_1'][idxFrame]
+    Data2[ii,idxCatalog] = Tbl['MAG_APER_2'][idxFrame]
+
+Data[Data == 0] = np.nan
+Data1[Data1 == 0] = np.nan
+Data2[Data2 == 0] = np.nan
+
+
+
+
+#Catalog1 = SkyCoord(ra=Tbl['ALPHA_J2000'], dec=Tbl['DELTA_J2000'], unit='deg')
+
+
+
+'''
+'''
+for ii in range(1, N_Frame):
+    Tbl = ascii.read(file_list[ii])
+    Frame = SkyCoord(ra=Tbl['ALPHA_J2000'], dec=Tbl['DELTA_J2000'], unit='deg')
+    idxFrame, idxCatalog, d2d, dist3d = search_around_sky(Frame, Catalog, 4*u.arcsec)#разделяет
+    Data[ii,idxCatalog] = Tbl['MAG_APER'][idxFrame]
+    Data1[ii,idxCatalog] = Tbl['MAG_APER_1'][idxFrame]
+    Data2[ii,idxCatalog] = Tbl['MAG_APER_2'][idxFrame]
+
+Data[Data == 0] = np.nan
+Data1[Data1 == 0] = np.nan
+Data2[Data2 == 0] = np.nan
+
+##serch bad frames
+Bad_threshold = 0.25
+diff = Data[:, 0] - np.nanmedian(Data[:, 0])
+plt.plot(diff)
+plt.hlines(Bad_threshold, 0, diff.shape[0])
+plt.show()
+
+##delete bad frames
+Index = np.where(diff<Bad_threshold)[0]
+##print(Index)
+Data = Data[Index]
+plt.plot(Data)
+plt.show()
+
+
+
+
+
+##plt.plot(Data)
+##plt.show()
+
+##plt.plot(Data1)
+##plt.show()
+##
+##plt.plot(Data2)
+##plt.show()
+
+##Data[Data == 0] = np.nan
+Best = np.nanmean(Data, 0)
+Index = np.where(Best<14)[0]
+Trend = np.nanmean(Data[:, Index], 1)
+Trend = Trend - np.mean(Trend)
+Data = Data - Trend[:, np.newaxis]
+
+plt.plot(Data)
+plt.show()
+
+##Data1[Data1 == 0] = np.nan
+##Best = np.nanmean(Data1, 0)
+##Index = np.where(Best<14)[0]
+##Trend = np.nanmean(Data1[:, Index], 1)
+##Trend = Trend - np.mean(Trend)
+##Data1 = Data1 - Trend[:, np.newaxis]
+##
+##Data2[Data2 == 0] = np.nan
+##Best = np.nanmean(Data2, 0)
+##Index = np.where(Best<14)[0]
+##Trend = np.nanmean(Data2[:, Index], 1)
+##Trend = Trend - np.mean(Trend)
+##Data2 = Data2 - Trend[:, np.newaxis]
+
+
+plt.plot(np.nanmean(Data, 0), np.nanstd(Data, 0), 'r.')
+##plt.plot(np.nanmean(Data1, 0), np.nanstd(Data1, 0), 'b.')
+##plt.plot(np.nanmean(Data2, 0), np.nanstd(Data2, 0), 'g.')
+plt.show()
+'''
