@@ -1,0 +1,127 @@
+#! /usr/bin/env python
+# -*- coding: utf-8 -*-
+import os
+import numpy as np
+from matplotlib import pyplot as plt
+
+from astropy.coordinates import SkyCoord
+from astropy import units as u
+from astropy.coordinates import match_coordinates_sky
+from astropy.io import ascii
+from  astropy.io.ascii import SExtractor as SE
+from astropy.table import unique
+from astropy.table import Table
+
+##main parameters 
+dir_name = '/home/anastasia/Desktop/4_NGC188/V/'
+
+print('ok')
+##create list of image files 
+file_list = []
+##dir_content = os.listdir(Path2Data)
+for file in os.listdir(dir_name):   ##read directory with images
+    if file.count('.cat')==1:
+        file_list.append(dir_name + file) #
+        
+N_Frame = len(file_list)
+print('Files: ' + str(N_Frame))
+
+
+
+##set first table as catalog #xmatch 
+path_to_xmatch='/home/anastasia/Desktop/4_NGC188/XMatching.txt'
+Base_Tbl = ascii.read(path_to_xmatch)
+# print(Tbl.info)
+Catalog = SkyCoord(ra=Base_Tbl['ALPHA_J2000_tab2'], dec=Base_Tbl['DELTA_J2000_tab2'], unit='deg')
+#Catalog = SkyCoord(ra=Base_Tbl['ra_tab1'], dec=Base_Tbl['dec_tab1'], unit='deg')
+
+N_Star = len(Base_Tbl['ALPHA_J2000_tab2'])
+print('Stars: ' + str(N_Star))
+#plt.plot(Base_Tbl['phot_g_mean_mag_tab1']-Base_Tbl['phot_rp_mean_mag_tab1'],  #Base_Tbl['phot_g_mean_mag_tab1'], 'b.')  #,Base_Tbl['MAG_APER_tab2'])
+#plt.show()
+
+Out_Tbl=Base_Tbl['NUMBER_tab2','dist','ALPHA_J2000_tab2','DELTA_J2000_tab2','_RAJ2000_tab1','_DEJ2000_tab1','MAG_APER_tab2','Bmag_tab1','Vmag_tab1']
+Out_Tbl['MAG_APER1']=[0]
+Out_Tbl['MAG_APER2']=[0]
+Out_Tbl['MAG_APER3']=[0]
+#print Out_Tbl
+#-----------------------------------------------------------------------------------------------
+Empty=np.asarray(Out_Tbl['ALPHA_J2000_tab2'])
+Empty=np.stack((Empty, np.asarray(Out_Tbl['DELTA_J2000_tab2'])), axis=1)
+Empty=np.column_stack([Empty, np.asarray(Out_Tbl['Bmag_tab1'])])
+Empty=np.column_stack([Empty, np.asarray(Out_Tbl['Vmag_tab1'])])
+EMP=np.zeros(len(Empty))
+EMPTAR2=np.zeros(len(Empty))
+EMPTAR3=np.zeros(len(Empty))
+#print Empty
+#plt.plot(Empty[:,0], Empty[:,1], 'b.')  #,Base_Tbl['MAG_APER_tab2'])
+#plt.show()
+print (len(Empty))
+for ii in range  (0,N_Frame):
+    Tbl = ascii.read(file_list[ii])#first file cat
+    Sources = SkyCoord(ra=Tbl['ALPHA_J2000'], dec=Tbl['DELTA_J2000'], unit='deg')
+    idx, d2d, d3d =match_coordinates_sky(Catalog,Sources)
+    Local_Sources =Tbl[idx]    #filtered cat
+    #Local_Sources['d2d']=d2d 
+    #Out_Tbl['NUMBER']=Local_Sources['NUMBER']
+    Out_Tbl['MAG_APER_tab2']=Local_Sources['MAG_APER']
+    Out_Tbl['MAG_APER1']=Local_Sources['MAG_APER_1']
+    Out_Tbl['MAG_APER2']=Local_Sources['MAG_APER_2']
+    
+    Out_Tbl['MAG_APER3']=Local_Sources['MAG_APER_3']
+   
+    #Out_Tbl['d2d']=Local_Sources['d2d']
+
+#sort by distance
+    Index = np.where(d2d.arcsec>2.0)[0]
+    TAR=np.array(Out_Tbl['MAG_APER_tab2'])
+    TAR2=np.array(Out_Tbl['MAG_APER1'])
+    TAR3=np.array(Out_Tbl['MAG_APER2'])
+    print TAR
+    TAR[Index]=np.nan
+    TAR2[Index]=np.nan
+    TAR3[Index]=np.nan
+    Empty=np.column_stack([Empty,TAR])
+    EMP=np.column_stack([EMP,TAR])
+    EMPTAR2=np.column_stack([EMP,TAR2])
+    EMPTAR3=np.column_stack([EMP,TAR3])
+    #X=np.unique(Empty)
+    #print EMP
+    print ('OK')
+    #print Empty
+#MEAN VALUE
+EMP=np.delete(EMP,0,1) 
+EMPTAR2=np.delete(EMPTAR2,0,1) 
+EMPTAR3=np.delete(EMPTAR3,0,1) 
+row_mean=np.nanmean(EMP,axis=1)
+row_mean2=np.nanmean(EMPTAR2,axis=1)
+row_mean3=np.nanmean(EMPTAR3,axis=1)
+#print row_mean
+Empty=np.column_stack([Empty,row_mean])
+Empty=np.column_stack([Empty,row_mean2])
+Empty=np.column_stack([Empty,row_mean3])
+
+'''STD=np.nanstd(EMP,axis=1)
+STD2=np.nanstd(EMPTAR2,axis=1)
+STD3=np.nanstd(EMPTAR3,axis=1)
+Empty=np.column_stack([Empty,STD])
+Empty=np.column_stack([Empty,STD2])
+Empty=np.column_stack([Empty,STD3])
+
+meanie=np.nanmean(Empty,axis=0)
+print meanie
+print ('best is first')'''
+#print Out_Tbl['MAG_APER_tab2']
+np.savetxt('/home/anastasia/Desktop/4_NGC188/SUPERTABAPASSv_filter.txt',Empty,delimiter='	',fmt='%s')
+#-------------------------------------------------------------------------------------------
+#plt.plot(Empty[:,2], Empty[:,2], 'b.')  #,Base_Tbl['MAG_APER_tab2'])
+#plt.show()
+
+Index=np.where(np.isnan(Empty)==False)
+
+
+Empty=Empty[Index]
+
+#OFFSET=np.subtract(X,Y)
+
+#print OFFSET
